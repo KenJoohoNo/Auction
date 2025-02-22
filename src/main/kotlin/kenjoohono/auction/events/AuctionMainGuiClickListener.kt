@@ -13,7 +13,6 @@ class AuctionMainGuiClickListener : Listener {
     fun onInventoryClick(event: InventoryClickEvent) {
         if (event.view.title == AuctionMainGui.TITLE) {
             event.isCancelled = true
-
             val item = event.currentItem ?: return
             if (!item.hasItemMeta() || !item.itemMeta.hasDisplayName()) return
             val displayName = item.itemMeta.displayName
@@ -21,6 +20,10 @@ class AuctionMainGuiClickListener : Listener {
             if (displayName == auctionItem) {
                 val player = event.whoClicked as? Player ?: return
                 AuctionStartGui().openAuctionStartGui(player)
+            }
+        } else if (event.view.title == AuctionStartGui.TITLE) {
+            if (event.rawSlot < event.view.topInventory.size) {
+                event.isCancelled = true
             }
         }
     }
