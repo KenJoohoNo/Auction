@@ -1,0 +1,8 @@
+name: Auction
+version: '1'
+main: kenjoohono.auction.Auction
+api-version: '1.21'
+commands:
+  경매:
+    description: 경매 GUI를 엽니다
+    usage: /경매
