@@ -14,11 +14,11 @@ class AuctionMainGui {
         for (slot in 45..53) {
             auctionInventory.setItem(slot, blackGlass)
         }
-        val anvilItem = ItemStack(Material.ANVIL)
-        anvilItem.itemMeta = anvilItem.itemMeta?.apply {
-            setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a경매 올리기"))
+        val auctionStartItem = ItemStack(Material.ANVIL)
+        auctionStartItem.itemMeta = auctionStartItem.itemMeta?.apply {
+            setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a경매 등록"))
         }
-        auctionInventory.setItem(49, anvilItem)
+        auctionInventory.setItem(49, auctionStartItem)
         player.openInventory(auctionInventory)
     }
 
