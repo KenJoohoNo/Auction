@@ -93,6 +93,7 @@ class AuctionStartGui {
                     clearTitlesAndActionBar(player)
                     HandlerList.unregisterAll(this)
                     if (message.equals("취소", ignoreCase = true)) {
+                        giveItemsToPlayer(player, sortedItems)
                         player.sendMessage("${ChatColor.YELLOW}경매 등록이 취소되었습니다.")
                         auctionRegistered = false
                     } else {
@@ -119,12 +120,18 @@ class AuctionStartGui {
                     HandlerList.unregisterAll(chatListener)
                     Bukkit.getScheduler().cancelTask(countdownTaskId)
                     clearTitlesAndActionBar(player)
+                    giveItemsToPlayer(player, sortedItems)
                     player.sendMessage("${ChatColor.YELLOW}시간 초과로 경매 등록이 취소되었습니다.")
                 }
             } catch (e: Exception) {
             }
         }, 15 * 20L)
         player.closeInventory()
+    }
+
+    private fun giveItemsToPlayer(player: Player, items: List<ItemStack>) {
+        val leftovers = player.inventory.addItem(*items.toTypedArray())
+        leftovers.values.forEach { player.world.dropItem(player.location, it) }
     }
 
     private fun clearTitlesAndActionBar(player: Player) {

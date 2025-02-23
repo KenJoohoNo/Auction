@@ -159,6 +159,17 @@ class AuctionMainGui {
 
     private fun restoreItemMetaManually(metaMap: Map<String, Any>, material: Material): ItemMeta? {
         var meta = Bukkit.getItemFactory().getItemMeta(material) ?: return null
+
+        if (metaMap.containsKey("display-name")) {
+            val displayNameJson = metaMap["display-name"].toString()
+            try {
+                val comp = gson.fromJson(displayNameJson, ChatComponent::class.java)
+                meta.setDisplayName(flattenChatComponent(comp))
+            } catch (ex: Exception) {
+                meta.setDisplayName(displayNameJson)
+            }
+        }
+
         if (metaMap.containsKey("lore")) {
             val loreValue = metaMap["lore"]
             val rawLoreList: List<String>? = when (loreValue) {
@@ -188,6 +199,7 @@ class AuctionMainGui {
                 }
             }
         }
+
         if (metaMap.containsKey("stored-enchants") && material == Material.ENCHANTED_BOOK) {
             val storedEnchants = metaMap["stored-enchants"]
             if (storedEnchants is Map<*, *>) {
