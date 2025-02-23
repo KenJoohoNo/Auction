@@ -51,26 +51,45 @@ private fun parseOperation(opStr: String): AttributeModifier.Operation {
 
 class AuctionMainGui {
     private val gson = Gson()
-    fun openAuctionGui(player: Player) {
-        val auctionInventory = Bukkit.createInventory(null, 54, TITLE)
+
+    fun openAuctionGui(player: Player, page: Int = 0) {
         val auctionItems = loadAuctionItems()
-        auctionItems.forEachIndexed { index, item ->
-            if (index > 44) return@forEachIndexed
-            auctionInventory.setItem(index, item)
+        val titleWithPage = "$TITLE (페이지: $page)"
+        val inventory = Bukkit.createInventory(null, 54, titleWithPage)
+        val startIndex = page * 45
+        val endIndex = minOf(startIndex + 45, auctionItems.size)
+        for (i in startIndex until endIndex) {
+            inventory.setItem(i - startIndex, auctionItems[i])
         }
         val blackGlass = ItemStack(Material.BLACK_STAINED_GLASS_PANE).apply {
             itemMeta = itemMeta?.apply { setDisplayName(" ") }
         }
         for (slot in 45..53) {
-            auctionInventory.setItem(slot, blackGlass)
+            if (slot != 49) inventory.setItem(slot, blackGlass)
+        }
+        if (page > 0) {
+            val prevArrow = ItemStack(Material.ARROW).apply {
+                itemMeta = itemMeta?.apply {
+                    setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6이전 페이지"))
+                }
+            }
+            inventory.setItem(48, prevArrow)
+        }
+        if (endIndex < auctionItems.size) {
+            val nextArrow = ItemStack(Material.ARROW).apply {
+                itemMeta = itemMeta?.apply {
+                    setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a다음 페이지"))
+                }
+            }
+            inventory.setItem(50, nextArrow)
         }
         val auctionStartItem = ItemStack(Material.ANVIL).apply {
             itemMeta = itemMeta?.apply {
                 setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a경매 등록"))
             }
         }
-        auctionInventory.setItem(49, auctionStartItem)
-        player.openInventory(auctionInventory)
+        inventory.setItem(49, auctionStartItem)
+        player.openInventory(inventory)
     }
 
     private fun loadAuctionItems(): List<ItemStack> {
@@ -111,7 +130,6 @@ class AuctionMainGui {
                                 if (playerName != null) {
                                     val meta = itemStack.itemMeta ?: Bukkit.getItemFactory().getItemMeta(material)
                                     val loreList = meta.lore?.toMutableList() ?: mutableListOf()
-                                    loreList.add(ChatColor.translateAlternateColorCodes('&', "&f"))
                                     loreList.add(ChatColor.translateAlternateColorCodes('&', "&7아이템 아이디 : &6$fileName"))
                                     loreList.add(ChatColor.translateAlternateColorCodes('&', "&7아이템 등록자 : &6$playerName"))
                                     loreList.add(ChatColor.translateAlternateColorCodes('&', "&7아이템 가격 : &6$price"))
