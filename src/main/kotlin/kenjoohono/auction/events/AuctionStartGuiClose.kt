@@ -16,15 +16,15 @@ class AuctionStartGuiClose(private val plugin: Plugin) : Listener {
 
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
-        if (event.view.title == AuctionStartGui.TITLE) {
-            val player = event.player as? Player ?: return
-            closeGui[player.uniqueId]?.cancel()
-            closeGui[player.uniqueId] = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-                if (player.openInventory.title != AuctionStartGui.TITLE) {
-                    AuctionMainGui().openAuctionGui(player)
-                }
-                closeGui.remove(player.uniqueId)
-            }, 1L)
-        }
+//        if (event.view.title == AuctionStartGui.TITLE) {
+//            val player = event.player as? Player ?: return
+//            closeGui[player.uniqueId]?.cancel()
+//            closeGui[player.uniqueId] = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+//                if (player.openInventory.title != AuctionStartGui.TITLE) {
+//                    AuctionMainGui().openAuctionGui(player)
+//                }
+//                closeGui.remove(player.uniqueId)
+//            }, 1L)
+//        }
     }
 }

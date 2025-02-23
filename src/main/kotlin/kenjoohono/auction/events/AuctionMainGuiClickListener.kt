@@ -3,6 +3,7 @@ package kenjoohono.auction.events
 import kenjoohono.auction.gui.AuctionMainGui
 import kenjoohono.auction.gui.AuctionStartGui
 import org.bukkit.ChatColor
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -23,7 +24,10 @@ class AuctionMainGuiClickListener : Listener {
             }
         } else if (event.view.title == AuctionStartGui.TITLE) {
             if (event.rawSlot < event.view.topInventory.size) {
-                event.isCancelled = true
+                val cursorItem = event.cursor
+                event.isCancelled = cursorItem == null || cursorItem.type == Material.AIR
+            } else {
+                event.isCancelled = false
             }
         }
     }
