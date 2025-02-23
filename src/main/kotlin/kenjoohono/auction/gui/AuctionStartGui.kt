@@ -1,5 +1,7 @@
 package kenjoohono.auction.gui
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Material
@@ -22,7 +24,7 @@ class AuctionStartGui {
         val blackGlass = ItemStack(Material.BLACK_STAINED_GLASS_PANE).apply {
             itemMeta = itemMeta?.apply { setDisplayName(" ") }
         }
-        for (slot in 0 until 26) {
+        for (slot in 0 until 27) {
             inventory.setItem(slot, blackGlass)
         }
         val bundleItem = ItemStack(Material.BLACK_BUNDLE).apply {
@@ -39,46 +41,37 @@ class AuctionStartGui {
         val inventory = auctionBundle ?: return
         val bundleItem = inventory.getItem(13) ?: return
         if (bundleItem.type != Material.BLACK_BUNDLE) return
-
         val bundleMeta = bundleItem.itemMeta as? BundleMeta ?: return
         val items = bundleMeta.getItems()
         if (items.isEmpty()) return
-
         val sortedItems = items.map { it.clone() }.sortedBy { it.type.name }
-        val itemsJsonList = sortedItems.map { item ->
+        val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+        val itemsList = sortedItems.map { item ->
             val metaMap = item.itemMeta?.serialize()
-            buildString {
-                append("{\n")
-                append("  \"material\": \"${item.type}\",\n")
-                append("  \"amount\": ${item.amount}")
-                if (metaMap != null && metaMap.isNotEmpty()) {
-                    val metaJson = metaMap.toString().replace("\"", "\\\"")
-                    append(",\n  \"meta\": \"${metaJson}\"")
-                }
-                append("\n}")
+            val itemMap = mutableMapOf<String, Any>(
+                "material" to item.type.toString(),
+                "amount" to item.amount
+            )
+            if (metaMap != null && metaMap.isNotEmpty()) {
+                itemMap["meta"] = metaMap
             }
+            itemMap
         }
-
         val timestamp = Instant.now().toString()
-        val jsonOutput = "{\n  \"timestamp\": \"$timestamp\",\n  \"items\": [\n" +
-                itemsJsonList.joinToString(separator = ",\n") +
-                "\n  ]\n}"
-        val plugin = Bukkit.getPluginManager().getPlugin("Auction") ?: return
-        val playerFolder = File(plugin.dataFolder, player.uniqueId.toString())
-        if (!playerFolder.exists()) playerFolder.mkdirs()
-        val existingFiles = playerFolder.listFiles { _, name -> name.endsWith(".json5") } ?: arrayOf()
-        val nextNumber = (existingFiles.mapNotNull { it.nameWithoutExtension.toIntOrNull() }.maxOrNull() ?: 0) + 1
-        val outputFile = File(playerFolder, "$nextNumber.json5")
-        outputFile.writeText(jsonOutput)
-        player.sendMessage("${ChatColor.GREEN}번들 정보가 '${outputFile.name}' 파일로 저장되었습니다.")
-
+        val auctionData = mutableMapOf<String, Any>(
+            "timestamp" to timestamp,
+            "playerName" to player.name,
+            "items" to itemsList
+        )
+        player.sendMessage("${ChatColor.GREEN}경매 아이템이 준비되었습니다. 가격을 입력해주세요.")
         player.sendTitle(
             ChatColor.translateAlternateColorCodes('&', "&b가격 설정"),
             ChatColor.translateAlternateColorCodes('&', "&7채팅으로 원하는 가격을 입력해주세요"),
             10, 300, 10
         )
-
         var remainingSeconds = 15
+        var auctionRegistered = false
+        val plugin = Bukkit.getPluginManager().getPlugin("Auction") ?: return
         val countdownTaskId = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
             if (remainingSeconds > 0) {
                 val actionbarMsg = ChatColor.translateAlternateColorCodes(
@@ -89,48 +82,48 @@ class AuctionStartGui {
                 remainingSeconds--
             }
         }, 0L, 20L).taskId
-
         val chatListener = object : Listener {
             @EventHandler(priority = EventPriority.HIGHEST)
             fun onPlayerChat(event: AsyncPlayerChatEvent) {
                 if (event.player != player) return
                 event.isCancelled = true
-                val message = event.message.trim()
-                Bukkit.getScheduler().cancelTask(countdownTaskId)
-                clearTitlesAndActionBar(player)
-                if (message.equals("취소", ignoreCase = true)) {
-                    sortedItems.forEach { item ->
-                        player.inventory.addItem(item.clone())
-                    }
+                try {
+                    val message = event.message.trim()
+                    Bukkit.getScheduler().cancelTask(countdownTaskId)
+                    clearTitlesAndActionBar(player)
                     HandlerList.unregisterAll(this)
-                    player.sendMessage("${ChatColor.YELLOW}경매 등록이 취소되었습니다.")
-                } else {
-                    try {
+                    if (message.equals("취소", ignoreCase = true)) {
+                        player.sendMessage("${ChatColor.YELLOW}경매 등록이 취소되었습니다.")
+                        auctionRegistered = false
+                    } else {
                         val price = message.toDouble()
-                        val auctionJsonOutput = "{\n  \"timestamp\": \"$timestamp\",\n  \"price\": $price,\n  \"items\": [\n" +
-                                itemsJsonList.joinToString(separator = ",\n") +
-                                "\n  ]\n}"
-                        outputFile.writeText(auctionJsonOutput)
-                        HandlerList.unregisterAll(this)
+                        auctionData["price"] = price
+                        val playerFolder = File(plugin.dataFolder, player.uniqueId.toString())
+                        if (!playerFolder.exists()) playerFolder.mkdirs()
+                        val existingFiles = playerFolder.listFiles { _, name -> name.endsWith(".json5") } ?: arrayOf()
+                        val nextNumber = (existingFiles.mapNotNull { it.nameWithoutExtension.toIntOrNull() }.maxOrNull() ?: 0) + 1
+                        val outputFile = File(playerFolder, "$nextNumber.json5")
+                        outputFile.writeText(gson.toJson(auctionData))
                         player.sendMessage("${ChatColor.GRAY}경매 아이템이 등록되었습니다.")
-                    } catch (e: NumberFormatException) {
-                        player.sendMessage("${ChatColor.RED}유효한 숫자를 입력해주세요. (취소하려면 '취소' 입력)")
+                        auctionRegistered = true
                     }
+                } catch (e: Exception) {
+                    player.sendMessage("${ChatColor.RED}오류가 발생했습니다. 다시 시도해주세요.")
                 }
             }
         }
         Bukkit.getPluginManager().registerEvents(chatListener, plugin)
-
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-            HandlerList.unregisterAll(chatListener)
-            Bukkit.getScheduler().cancelTask(countdownTaskId)
-            clearTitlesAndActionBar(player)
-            sortedItems.forEach { item ->
-                player.inventory.addItem(item.clone())
+            try {
+                if (!auctionRegistered) {
+                    HandlerList.unregisterAll(chatListener)
+                    Bukkit.getScheduler().cancelTask(countdownTaskId)
+                    clearTitlesAndActionBar(player)
+                    player.sendMessage("${ChatColor.YELLOW}시간 초과로 경매 등록이 취소되었습니다.")
+                }
+            } catch (e: Exception) {
             }
-            player.sendMessage("${ChatColor.YELLOW}시간 초과로 경매 등록이 취소되었습니다.")
         }, 15 * 20L)
-
         player.closeInventory()
     }
 

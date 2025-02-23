@@ -24,8 +24,7 @@ class AuctionMainGuiClickListener : Listener {
             }
         } else if (event.view.title == AuctionStartGui.TITLE) {
             if (event.rawSlot < event.view.topInventory.size) {
-                val cursorItem = event.cursor
-                event.isCancelled = cursorItem == null || cursorItem.type == Material.AIR
+                event.isCancelled = (event.rawSlot != 13)
             } else {
                 event.isCancelled = false
             }

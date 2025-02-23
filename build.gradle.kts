@@ -14,10 +14,16 @@ repositories {
     maven("https://oss.sonatype.org/content/groups/public/") {
         name = "sonatype"
     }
+    maven("https://repo.codemc.io/repository/maven-public/") {
+        name = "CodeMC"
+    }
+    maven("https://mvnrepository.com/artifact/com.mojang/authlib")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("com.mojang:authlib:3.13.56")
+    compileOnly("de.tr7zw:item-nbt-api-plugin:2.14.1")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
