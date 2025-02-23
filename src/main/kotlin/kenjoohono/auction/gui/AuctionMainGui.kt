@@ -16,6 +16,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BannerMeta
+import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
@@ -184,6 +185,23 @@ class AuctionMainGui {
                     val level = value?.toString()?.toIntOrNull() ?: 1
                     val enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantKey.removePrefix("minecraft:")))
                     if (enchantment != null) meta.addEnchant(enchantment, level, true)
+                }
+            }
+        }
+        if (metaMap.containsKey("stored-enchants") && material == Material.ENCHANTED_BOOK) {
+            val storedEnchants = metaMap["stored-enchants"]
+            if (storedEnchants is Map<*, *>) {
+                val bookMeta = meta as? EnchantmentStorageMeta
+                if (bookMeta != null) {
+                    storedEnchants.forEach { (key, value) ->
+                        val enchantKey = key?.toString() ?: return@forEach
+                        val level = value?.toString()?.toIntOrNull() ?: 1
+                        val enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantKey.removePrefix("minecraft:")))
+                        if (enchantment != null) {
+                            bookMeta.addStoredEnchant(enchantment, level, true)
+                        }
+                    }
+                    meta = bookMeta
                 }
             }
         }
